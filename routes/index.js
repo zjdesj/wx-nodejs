@@ -4,7 +4,6 @@ var router = express.Router();
 
 var login = require(path.join(__dirname, '/login'));
 
-console.log(login);
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'MaiBaiCai' });

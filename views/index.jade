@@ -1,5 +1,6 @@
-extends layout
-
+extends main-layout
+block js
+  script(src='/js/require.js' data-main='/js/main.js')
 block content
   h1= title
   p Welcome to #{title}
