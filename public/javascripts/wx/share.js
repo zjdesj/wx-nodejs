@@ -4,7 +4,7 @@ define(['lib/j', 'http://res.wx.qq.com/open/js/jweixin-1.0.0.js'], function (jq,
     //wxDataHref = wxDataHref.replace(/#.*/, '');
     //wxDataHref = wxDataHref.replace(/\?.*/g, '');
     $.ajax({
-        url: 'http://115.28.132.98/signature',
+        url: '/node/signature',
         type: 'GET',
         data: {'url': wxDataHref},
         success: function (data) {

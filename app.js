@@ -9,7 +9,6 @@ var session = require('express-session');
 */
 
 var routes = require('./routes/index');
-var users = require('./routes/users');
 
 var app = express();
 
@@ -25,8 +24,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(require('stylus').middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/css', express.static(path.join(__dirname, 'public/stylesheets/')));
-app.use('/js', express.static(path.join(__dirname, 'public/javascripts/')));
+app.use('/node/css', express.static(path.join(__dirname, 'public/stylesheets/')));
+app.use('/node/js', express.static(path.join(__dirname, 'public/javascripts/')));
 /*
 app.use(session({
   resave: false, // don't save session if unmodified
@@ -35,8 +34,7 @@ app.use(session({
 }));
 */
 
-app.use('/', routes);
-app.use('/users', users);
+app.use('/node/', routes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
