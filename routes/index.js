@@ -57,19 +57,28 @@ router.get('/wx', function(req, res, next) {
     }
 });
 router.get('/signature', function (req, res) {
-    var signatureObj = wx.createSignature();    
-    console.log(signatureObj);
-    resUtil.responseCrossDomain(res);
-    resUtil.responseWithJson(res, signatureObj);
+    console.log('url:' + req.query.url);
+    wx.createJsSignature(req.query.url, function (signatureObj) {
+        console.log(signatureObj);
+        resUtil.responseCrossDomain(res);
+        resUtil.responseWithJson(res, signatureObj);
+    });
 });
 router.get('/wxpage/index.html', function(req, res, next) {
   res.render('wxindex', { title: 'test' });
 });
-/*
+/* 
+ * copy from get
+ * tobo verify
+ */
 router.post('/wx', function(req, res, next) {
-  console.log('post');
-  console.log(req);
-  res.send('post');
+    var params = req.query;
+    var echostr = params.echostr;
+    if (wx.checkSignature(params)) {
+        res.send(echostr);
+    } else {
+        console.log('not weixin server!');
+        res.send('not weixin server~');
+    }
 });
-*/
 module.exports = router;
