@@ -28,13 +28,22 @@ router.get('/wx', function(req, res, next) {
     }
 });
 router.get('/signature', function (req, res) {
-    console.log('url:' + req.query.url);
+    console.log('获取js api 签名；url:' + req.query.url);
     wx.createJsSignature(req.query.url, function (signatureObj) {
         console.log(signatureObj);
         resUtil.responseCrossDomain(res);
         resUtil.responseWithJson(res, signatureObj);
     });
 });
+router.get('/card-signature', function (req, res) {
+    console.log('获取微信卡券签名;url:' + req.query.url);
+    wx.createCardSignature(req.query.url, function (signatureObj) {
+        console.log(signatureObj);
+        resUtil.responseCrossDomain(res);
+        resUtil.responseWithJson(res, signatureObj);
+    });
+});
+
 router.get('/wxpage/index.html', function(req, res, next) {
   res.render('wxindex', { title: 'test' });
 });

@@ -71,15 +71,22 @@ var createSignature = function () {
     };
 };
 
-var cachedAccessToken = {};
+var cachedObj = function () {
+}
 /**
  * 获取access_token
  */
 var getAccessToken = function (callback) {
-    if (cachedAccessToken[appInfo.appId] && (cachedAccessToken[appInfo.appId].timestamp + 7200 * 1000 - 100 * 1000 > new Date().getTime())) {
+    if (typeof cachedObj['access_token'] === 'undefined') {
+        cachedObj['access_token'] = {
+        };
+        cachedObj['access_token'][appInfo.appId] = {};
+    }
+    var cached = cachedObj['access_token'][appInfo.appId];
+    if (cached && (cached.timestamp + 7200 * 1000 - 100 * 1000 > new Date().getTime())) {
         console.log('缓存的token');
-        callback(cachedAccessToken[appInfo.appId].accessToken);
-        return ;
+        callback(cached.accessToken);
+        return cacked.accessToken;
     }
     console.log('新获取token');
     var url = ['https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=', 
@@ -96,74 +103,113 @@ var getAccessToken = function (callback) {
             var data = arr.join('');
             data = JSON.parse(data);
             if (!data.access_token) {
-                cachedAccessToken[appInfo.appId] = {};
+                cached = {};
                 callback(cachedAccessToken[appInfo.appId].accessToken);
                 return;
             }
-            cachedAccessToken[appInfo.appId] = {
+            cached = {
                 accessToken: data.access_token,
                 timestamp: new Date().getTime()
             };
-            callback(cachedAccessToken[appInfo.appId].accessToken);
+            callback(data.accessToken);
         });
     }).on('error', function(e) {
         console.log("Got error: " + e.message);
     });
-}
+};
 
-var cachedTicket = {};
-
-var getTicket = function (callback) {
-    if (cachedTicket[appInfo.appId] && (cachedTicket[appInfo.appId].timestamp + 7200 * 1000 - 100 * 1000 > new Date().getTime())) {
-        console.log('缓存的ticket');
-        callback(cachedTicket[appInfo.appId].ticket);
-        return ;
+var getSomeTypeTicket = function (type) {
+    if (typeof cachedObj[type] === 'undefined') {
+        cachedObj[type] = {};
     }
-    console.log('新获取ticket');
-    getAccessToken(function (accessToken) {
-        var url = [
-            'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=',
-            accessToken,
-            '&type=jsapi'
-        ].join('');
 
-        http.get(url, function(res) {
-            var arr = [];
-            res.on('data', function(d) {
-                arr.push(d);
+    var cached = cachedObj[type];
+    return function (callback) {
+        if (cached[appInfo.appId] && (cached[appInfo.appId].timestamp + 7200 * 1000 - 100 * 1000 > new Date().getTime())) {
+            console.log('缓存的' + type + ' ticket');
+            callback(cached[appInfo.appId].ticket);
+            return ;
+        }
+        console.log('新获取' + type + 'ticket');
+        getAccessToken(function (accessToken) {
+            var url = [
+                'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=',
+                accessToken,
+                '&type=',
+                type
+            ].join('');
+
+            http.get(url, function(res) {
+                var arr = [];
+                res.on('data', function(d) {
+                    arr.push(d);
+                });
+                res.on('end', function () {
+                    var data = arr.join('');
+                    data = JSON.parse(data);
+                    if (!data.error_code) {
+                        cached[appInfo.appId] = {
+                            ticket: data.ticket,
+                            timestamp: new Date().getTime()
+                        };
+                        callback(cached[appInfo.appId].ticket);
+                        return data.ticket;
+                    }
+                    cachedTicket[appInfo.appId] = {};
+                    callback(cached[appInfo.appId].ticket);
+                });
+            }).on('error', function(e) {
+                console.log("Got error: " + e.message);
             });
-            res.on('end', function () {
-                var data = arr.join('');
-                data = JSON.parse(data);
-                if (!data.error_code) {
-                    cachedTicket[appInfo.appId] = {
-                        ticket: data.ticket,
-                        timestamp: new Date().getTime()
-                    };
-                    callback(cachedTicket[appInfo.appId].ticket);
-                    return data.ticket;
-                }
-                cachedTicket[appInfo.appId] = {};
-                callback(cachedTicket[appInfo.appId].ticket);
-            });
-        }).on('error', function(e) {
-            console.log("Got error: " + e.message);
         });
-    });
+    }
 };
 
 
-/**
+/*
+var getTicket = getSomeTypeTicket('jsapi');
+var getCardTicket = getSomeTypeTicket('wx_card');
+
  * 生成用于js签名及原料对象
- */
 var createJsSignature = function (url, callback) {
     getTicket(function (ticket) {
-        console.log('获取的ticket:' + ticket);
+        console.log('获取的js ticket:' + ticket);
+        console.log('获取js ticket时url传入的参数url：' + url);
+        if (!ticket) {
+            callback({});
+            return;
+        }
         var ts = createTimeStamp();
         var ns = createNonceStr();
         var appId = appInfo.appId;
         
-        console.log('url传入的参数url：' + url);
+        callback({
+            timestamp: ts,
+            signature: calculateJsSignature(ns, ts, ticket, url),
+            appid: appId,
+            nonce: ns,
+        })
+    });
+};
+*/
+
+/**
+ * 生成用于创造签名的函数
+ */
+var createTicketSignature = function (type, url, callback) {
+    var getTicket = getSomeTypeTicket(type);
+    var map = {
+        'jsapi': '基本js ticket',
+        'wx_card': '微信卡券ticket'
+    };
+    var text = map[type];
+    getTicket(function (ticket) {
+        console.log('获取的' + text + ':' + ticket);
+        var ts = createTimeStamp();
+        var ns = createNonceStr();
+        var appId = appInfo.appId;
+        
+        console.log('获取的js微信卡券ticket时url传入的参数url：' + url);
         callback({
             timestamp: ts,
             signature: calculateJsSignature(ns, ts, ticket, url),
