@@ -45,7 +45,19 @@ router.get('/card-signature', function (req, res) {
 });
 
 router.get('/wxpage/index.html', function(req, res, next) {
-  res.render('wxindex', { title: 'test' });
+    console.log(req.query);
+    var code = req.query.code;
+    var state = req.query.state;
+    
+    if (!code) {
+        var url = wx.relay('http://beta.tuinadaojia.com/node/wxpage/index.html', 'start');
+        res.redirect(url);
+        return;
+    }
+    wx.getUserInfo(code,function (data) {
+        console.log('获取的userInfo：' + JSON.stringify(data));
+    });
+    res.render('wxindex', { title: code });
 });
 /* 
  * copy from get

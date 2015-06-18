@@ -76,23 +76,37 @@ var cachedObj = function () {
 /**
  * 获取access_token
  */
-var getAccessToken = function (callback) {
+var getAccessToken = function (callback, code) {
+    var type = code ? 'code' : '';
     if (typeof cachedObj['access_token'] === 'undefined') {
-        cachedObj['access_token'] = {
+        cachedObj['access_token' + type] = {
         };
-        cachedObj['access_token'][appInfo.appId] = {};
+        cachedObj['access_token' + type][appInfo.appId] = {};
     }
-    var cached = cachedObj['access_token'][appInfo.appId];
+    var cached = cachedObj['access_token' + type][appInfo.appId];
     if (cached && (cached.timestamp + 7200 * 1000 - 100 * 1000 > new Date().getTime())) {
         console.log('缓存的token');
+        if (code) {
+            callback(cached);
+            return cached;
+        }
         callback(cached.accessToken);
-        return cacked.accessToken;
+        return cached.accessToken;
     }
-    console.log('新获取token');
-    var url = ['https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=', 
+    var url;
+    if (!type) {
+        url = ['https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=', 
         appInfo.appId, 
         '&secret=',  
         appInfo.appsecret].join('');
+    } else {
+        url = ['https://api.weixin.qq.com/sns/oauth2/access_token?grant_type=authorization_code&appid=', 
+        appInfo.appId, 
+        '&secret=',  
+        appInfo.appsecret,
+        '&code=',
+        code].join('');
+    }
 
     http.get(url, function(res) {
         var arr = [];
@@ -104,14 +118,19 @@ var getAccessToken = function (callback) {
             data = JSON.parse(data);
             if (!data.access_token) {
                 cached = {};
-                callback(cachedAccessToken[appInfo.appId].accessToken);
+                callback(cached.accessToken);
+                return;
+            }
+            if (code) {
+                cached = data;
+                callback(data);
                 return;
             }
             cached = {
                 accessToken: data.access_token,
                 timestamp: new Date().getTime()
             };
-            callback(data.accessToken);
+            callback(data.access_token);
         });
     }).on('error', function(e) {
         console.log("Got error: " + e.message);
@@ -165,60 +184,115 @@ var getSomeTypeTicket = function (type) {
     }
 };
 
-
-/*
-var getTicket = getSomeTypeTicket('jsapi');
-var getCardTicket = getSomeTypeTicket('wx_card');
-
- * 生成用于js签名及原料对象
-var createJsSignature = function (url, callback) {
-    getTicket(function (ticket) {
-        console.log('获取的js ticket:' + ticket);
-        console.log('获取js ticket时url传入的参数url：' + url);
-        if (!ticket) {
-            callback({});
-            return;
-        }
-        var ts = createTimeStamp();
-        var ns = createNonceStr();
-        var appId = appInfo.appId;
-        
-        callback({
-            timestamp: ts,
-            signature: calculateJsSignature(ns, ts, ticket, url),
-            appid: appId,
-            nonce: ns,
-        })
-    });
-};
-*/
-
 /**
  * 生成用于创造签名的函数
  */
-var createTicketSignature = function (type, url, callback) {
+var createTicketSignature = function (type) {
     var getTicket = getSomeTypeTicket(type);
     var map = {
         'jsapi': '基本js ticket',
         'wx_card': '微信卡券ticket'
     };
-    var text = map[type];
-    getTicket(function (ticket) {
-        console.log('获取的' + text + ':' + ticket);
-        var ts = createTimeStamp();
-        var ns = createNonceStr();
-        var appId = appInfo.appId;
-        
-        console.log('获取的js微信卡券ticket时url传入的参数url：' + url);
-        callback({
-            timestamp: ts,
-            signature: calculateJsSignature(ns, ts, ticket, url),
-            appid: appId,
-            nonce: ns,
-        })
-    });
+    var text ='获取的' + map[type];
+    return function (url, callback) {
+        getTicket(function (ticket) {
+            console.log(text + ':' + ticket);
+            var ts = createTimeStamp();
+            var ns = createNonceStr();
+            var appId = appInfo.appId;
+            
+            console.log('获取' + text + '时传入的参数url：' + url);
+            callback({
+                timestamp: ts,
+                signature: calculateJsSignature(ns, ts, ticket, url),
+                appid: appId,
+                nonce: ns
+            });
+        });
+    }
 };
+
+/*
+ * 从入口地址获取code;
+ * url 要跳转的地址
+ * state 跳转地址状态 用于处理逻辑
+ * type 默认snsapi_base
+ *      snsapi_base  
+ *      snsapi_userinfo
+ */
+var middle = function (url, state, type) {
+    if (!type) {
+        type = "snsapi_base"
+    }
+    var urlArr = [
+        'https://open.weixin.qq.com/connect/oauth2/authorize?appid=',
+        appInfo.appId,
+        '&redirect_uri=',
+        encodeURIComponent(url),
+        '&response_type=code&scope=',
+        type,
+        '&state=',
+        state,
+        '#wechat_redirect'
+    ];
+    var turl = urlArr.join('');
+    console.log(turl);
+    return turl;
+};
+
+/*
+ * 从code获取access_token 还有用户的openid 相关信息。
+ */
+var getOpenId = function (code, callback) {
+    console.log('用于获取openid的code：' + code);
+    /*
+     * data 格式
+     * {
+     *    "access_token":"ACCESS_TOKEN",
+     *    "expires_in":7200,
+     *    "refresh_token":"REFRESH_TOKEN",
+     *    "openid":"OPENID",
+     *    "scope":"SCOPE"
+     * }
+     */
+    getAccessToken(function (data, code) {
+        console.log('获取的openid数据' + JSON.stringify(data));
+        callback(data, code);
+    }, code);
+};
+
+var getUserInfo = function (code, callback, lang) {
+    var lang = lang || 'zh_CN';
+    getOpenId(code, function (data, code) {
+        var url = [
+            'https://api.weixin.qq.com/sns/userinfo?access_token=',
+            //'https://api.weixin.qq.com/cgi-bin/user/info?access_token=',
+            data.access_token,
+            '&openid=',
+            data.openid,
+            '&lang=zh_CN'
+        ].join('');
+        console.log('获取userinfo url：' + url);
+        http.get(url, function(res) {
+            var arr = [];
+            res.on('data', function(d) {
+                arr.push(d);
+            });
+            res.on('end', function () {
+                var data = arr.join('');
+                data = JSON.parse(data);
+                callback(data);
+            });
+        }).on('error', function(e) {
+            console.log("Got error: " + e.message);
+        });
+    });
+}
 
 module.exports.createSignature = createSignature;
 module.exports.checkSignature = checkSignature;
-module.exports.createJsSignature = createJsSignature;
+module.exports.createJsSignature = createTicketSignature('jsapi');
+module.exports.createCardSignature = createTicketSignature('wx_card');
+module.exports.getOpenId = getOpenId;
+module.exports.relay = middle;
+module.exports.getUserInfo = getUserInfo;
