@@ -1,7 +1,6 @@
 var express = require('express');
 var path = require('path');
 var router = express.Router();
-var crypto = require('crypto');
 
 var wx = require(path.join(__dirname, '/wx'));
 var resUtil = require(path.join(__dirname, '/resUtil'));
@@ -49,12 +48,15 @@ router.get('/wxpage/index.html', function(req, res, next) {
     var code = req.query.code;
     var state = req.query.state;
     
+    /*
+     * 需要和获取用户信息的 包括openId的 需要首先调用relay函数 经过微信服务器获取code
+     */
     if (!code) {
-        var url = wx.relay('http://beta.tuinadaojia.com/node/wxpage/index.html', 'start');
+        var url = wx.relayBase('http://beta.tuinadaojia.com/node/wxpage/index.html', 'start');
         res.redirect(url);
         return;
     }
-    wx.getUserInfo(code,function (data) {
+    wx.getScopeUserInfo(code, function (data) {
         console.log('获取的userInfo：' + JSON.stringify(data));
     });
     res.render('wxindex', { title: code });
