@@ -339,7 +339,7 @@ var isSubscribe = function (data) {
     if (data && data.subscribe) {
         return data.subscribe;
     }
-    getBaseUserInfo(data, function (msg) {
+    getUserInfo(data, function (msg) {
         return msg.subscribe;
     });    
 };

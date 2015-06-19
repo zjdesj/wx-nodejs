@@ -58,8 +58,8 @@ router.get('/wxpage/index.html', function(req, res, next) {
     }
     wx.getScopeUserInfo(code, function (data) {
         console.log('获取的userInfo：' + JSON.stringify(data));
+        res.render('wxindex', { title: data.nickname});
     });
-    res.render('wxindex', { title: code });
 });
 /* 
  * copy from get
