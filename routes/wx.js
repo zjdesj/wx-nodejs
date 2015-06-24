@@ -308,6 +308,7 @@ var getScopeUserInfo = function (code, callback, lang) {
             lang
         ].join('');
         console.log('获取scope为userinfo用户信息的url：' + url);
+        
         http.get(url, function(res) {
             var arr = [];
             res.on('data', function(d) {
@@ -339,7 +340,7 @@ var isSubscribe = function (data) {
     if (data && data.subscribe) {
         return data.subscribe;
     }
-    getUserInfo(data, function (msg) {
+    getBaseUserInfo(data, function (msg) {
         return msg.subscribe;
     });    
 };

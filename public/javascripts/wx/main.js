@@ -11,7 +11,22 @@ requirejs.config({
     }
 });
 // Start the main app logic.
-requirejs(['share'], function (share) {
-  //jQuery, canvas and the app/sub module are all
-  //loaded and can be used here now.
+requirejs(['base', 'cardSign', 'card'], function (base, sign, card) {
+    base(function ($, wx) {
+        $('button').on('click', function (){
+            alert('获取优惠');
+            sign(function (signature) {
+                console.log(signature);
+                card($, wx, signature);
+            });
+        });
+    });
 });
+
+/*
+requirejs(['card'], function (card) {
+    card(function ($, wx) {
+        console.log('bbb');
+    });    
+});
+*/
