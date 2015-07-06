@@ -11,6 +11,7 @@ module.exports.getWxEnv = function (req) {
     var isWx = true;
     var wxVer = '';
     var hasCardApi = false;
+    var hasPay = false;
     if (!matchArr) {
         isWx = false;
     } else {
@@ -22,11 +23,15 @@ module.exports.getWxEnv = function (req) {
         if (wxVerNumber >= 602) {
             hasCardApi = true;
         }
+        if (wxVerNumber >= 500) {
+            hasPay = true;
+        }
     }
 
     return {
         isWx: isWx,
         wxVer: wxVer,
-        hasCardApi: hasCardApi
+        hasCardApi: hasCardApi,
+        hasPayApi: hasPay
     };
 };

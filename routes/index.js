@@ -86,6 +86,17 @@ router.get('/wxpage/card-test-white-list.html', function (req, res, next) {
     }); 
 });
 
+
+// 微信location 页面
+router.get('/wxpage/location.html', function(req, res, next) {
+    res.render('wxloc', { title: "location"});
+});
+
+// 微信支付 页面
+router.get('/wxpage/location.html', function(req, res, next) {
+    res.render('wxpay', { title: "pay"});
+});
+
 /* 
  * copy from get
  * tobo verify

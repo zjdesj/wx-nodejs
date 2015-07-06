@@ -12,7 +12,7 @@ requirejs.config({
 });
 // Start the main app logic.
 requirejs(['base', 'cardSign', 'card'], function (base, sign, card) {
-    base(function ($, wx) {
+    base(['openCard', 'chooseCard', 'addCard'], function ($, wx) {
         $('button').on('click', function (){
             alert('获取优惠');
             sign(function (signature) {
