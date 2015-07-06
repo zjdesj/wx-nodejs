@@ -36,7 +36,7 @@ router.get('/signature', function (req, res) {
     wxTicket.createJsSignature(req.query.url, function (signatureObj) {
         console.log(signatureObj);
         resUtil.responseCrossDomain(res);
-        resUtil.responseWithJson(res, signatureObj);
+        resUtil.responseWithJson(res, {data: signatureObj});
     });
 });
 router.get('/card-signature', function (req, res) {
@@ -45,6 +45,27 @@ router.get('/card-signature', function (req, res) {
         console.log(signatureObj);
         resUtil.responseCrossDomain(res);
         resUtil.responseWithJson(res, signatureObj);
+    });
+});
+router.get('/access_token', function (req, res) {
+    console.log('获取access_token:');
+    wxTicket.getAccessToken(function (signatureObj) {
+        resUtil.responseCrossDomain(res);
+        resUtil.responseWithJson(res, {data: signatureObj});
+    });
+});
+router.get('/jsapi_ticket', function (req, res) {
+    console.log('获取jsapi_ticket:');
+    wxTicket.getAccessToken(function (signatureObj) {
+        resUtil.responseCrossDomain(res);
+        resUtil.responseWithJson(res, {data: signatureObj});
+    });
+});
+router.get('/wx_card_ticket', function (req, res) {
+    console.log('获取wx_card_ticket:');
+    wxTicket.getAccessToken(function (signatureObj) {
+        resUtil.responseCrossDomain(res);
+        resUtil.responseWithJson(res, {data: signatureObj});
     });
 });
 

@@ -15,9 +15,8 @@ var cachedObj = function () {
  */
 var getAccessToken = function (callback, code) {
     var type = code ? 'code' : '';
-    if (typeof cachedObj['access_token'] === 'undefined') {
-        cachedObj['access_token' + type] = {
-        };
+    if (typeof (cachedObj['access_token' + type]) === 'undefined') {
+        cachedObj['access_token' + type] = {};
         cachedObj['access_token' + type][appInfo.appId] = {};
     }
     var cached = cachedObj['access_token' + type][appInfo.appId];
@@ -47,16 +46,16 @@ var getAccessToken = function (callback, code) {
 
     getDataFromWx(url, function (data) {
         if (!data.access_token) {
-            cached = {};
+            cachedObj['access_token' + type][appInfo.appId] = {};
             callback(cached.accessToken);
             return;
         }
         if (code) {
-            cached = data;
+            cachedObj['access_token' + type][appInfo.appId] = data;
             callback(data);
             return;
         }
-        cached = {
+        cachedObj['access_token' + type][appInfo.appId] = {
             accessToken: data.access_token,
             timestamp: new Date().getTime()
         };
@@ -155,5 +154,7 @@ var createCardTicketSignature = function () {
 }
 
 module.exports.getAccessToken = getAccessToken;
+module.exports.getJsApiTicket = getSomeTypeTicket('jsapi');
+module.exports.getWxCardTicket = getSomeTypeTicket('wx_card');
 module.exports.createJsSignature = createJsTicketSignature();
 module.exports.createCardSignature = createCardTicketSignature();
